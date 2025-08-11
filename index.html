@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <link rel="icon" href="https://storage2.me-qr.com/image/2025/Jul/29/ae2256ce-73cb-4ab6-a337-701456ec022b.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>簡易ドット絵エディター</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .container {
+            background-color: #ffffff;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            padding: 32px; 
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 24px; 
+            max-width: 90%;
+            width: 800px; 
+        }
+        .grid-container {
+            border: 1px solid #ccc;
+            background-color: #fff;
+            display: grid;
+            touch-action: none; 
+        }
+        .grid-cell {
+            width: 20px; 
+            height: 20px; 
+            background-color: #ffffff;
+            border: 1px solid #e0e0e0;
+            box-sizing: border-box;
+        }
+        .color-palette {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px; 
+            margin-top: 20px; 
+            justify-content: center;
+        }
+        .color-box {
+            width: 40px; 
+            height: 40px;
+            border-radius: 10px; 
+            cursor: pointer;
+            border: 2px solid transparent;
+            transition: border-color 0.2s;
+        }
+        .color-box.selected {
+            border-color: #4f46e5; 
+            box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.4); 
+        }
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 16px; 
+            justify-content: center;
+            align-items: center;
+        }
+        button {
+            padding: 14px 28px; 
+            border-radius: 8px; 
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            font-size: 1.1rem; 
+        }
+        button:hover {
+            transform: translateY(-2px); 
+        }
+        .button-primary {
+            background-color: #4f46e5; 
+            color: white;
+            border: none;
+        }
+        .button-primary:hover {
+            background-color: #4338ca; 
+        }
+        .button-secondary {
+            background-color: #e0e7ff; 
+            color: #4f46e5; 
+            border: none;
+        }
+        .button-secondary:hover {
+            background-color: #c7d2fe; 
+        }
+        input[type="number"] {
+            padding: 5px 0px; 
+            border-radius: 8px;
+            border: 1px solid #d1d5db; 
+            width: 90px; 
+            text-align: center;
+            font-size: 1.1rem; 
+        }
+        input[type="color"] {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            width: 44px; 
+            height: 44px;
+            background-color: transparent;
+            border: none;
+            cursor: pointer;
+            border-radius: 10px; 
+        }
+        input[type="color"]::-webkit-color-swatch {
+            border-radius: 10px;
+            border: none;
+        }
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+        input[type="color"]::-moz-color-swatch {
+            border-radius: 10px;
+            border: none;
+        }
+        input[type="color"]::-moz-color-swatch-wrapper {
+            padding: 0;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px; 
+                gap: 16px;
+            }
+            .grid-cell {
+                width: 15px; 
+                height: 15px;
+            }
+            .color-box {
+                width: 36px;
+                height: 36px;
+            }
+            .controls {
+                flex-direction: column;
+                gap: 12px;
+            }
+            button, input[type="number"] {
+                width: 100%;
+                max-width: 250px; 
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="container">
+        <h1 class="text-3xl font-bold text-gray-800 mb-4">ドット絵エディター</h1>
+
+        <div class="controls flex flex-wrap justify-center items-center gap-4 mb-4">
+            <div>
+                <label for="gridSize" class="text-gray-700 mr-2">グリッドサイズ:</label>
+                <input type="number" id="gridSize" value="16" min="8" max="64" class="rounded-lg border-gray-300 text-center">
+            </div>
+            <button id="createGridBtn" class="button-primary">▫グリッド作成▫</button>
+            <button id="clearGridBtn" class="button-secondary">▫クリア▫</button>
+            <button id="downloadBtn" class="button-primary">▫ダウンロード▫</button>
+        </div>
+
+        <div class="color-palette">
+            <div class="color-box selected" style="background-color: #000000;" data-color="#000000"></div>
+            <div class="color-box" style="background-color: #FF0000;" data-color="#FF0000"></div>
+            <div class="color-box" style="background-color: #00FF00;" data-color="#00FF00"></div>
+            <div class="color-box" style="background-color: #0000FF;" data-color="#0000FF"></div>
+            <div class="color-box" style="background-color: #FFFF00;" data-color="#FFFF00"></div>
+            <div class="color-box" style="background-color: #00FFFF;" data-color="#00FFFF"></div>
+            <div class="color-box" style="background-color: #FF00FF;" data-color="#FF00FF"></div>
+            <div class="color-box" style="background-color: #FFFFFF;" data-color="#FFFFFF"></div>
+            <input type="color" id="customColorPicker" value="#10B981" class="rounded-lg">
+        </div>
+
+        <div id="gridContainer" class="grid-container"></div>
+    </div>
+
+    <script>
+        const gridSizeInput = document.getElementById('gridSize');
+        const createGridBtn = document.getElementById('createGridBtn');
+        const clearGridBtn = document.getElementById('clearGridBtn');
+        const downloadBtn = document.getElementById('downloadBtn');
+        const gridContainer = document.getElementById('gridContainer');
+        const colorPalette = document.querySelector('.color-palette');
+        const customColorPicker = document.getElementById('customColorPicker');
+
+        let currentGridSize = parseInt(gridSizeInput.value);
+        let selectedColor = '#000000'; 
+        let isDrawing = false; 
+
+        document.addEventListener('DOMContentLoaded', () => {
+            createGrid(currentGridSize);
+            updateSelectedColorUI();
+        });
+
+        function createGrid(size) {
+            gridContainer.innerHTML = ''; 
+            gridContainer.style.gridTemplateColumns = `repeat(${size}, 1fr)`;
+            gridContainer.style.gridTemplateRows = `repeat(${size}, 1fr)`;
+
+            const maxGridWidth = Math.min(window.innerWidth * 0.8, 500);
+            const cellSize = Math.floor(maxGridWidth / size);
+
+            gridContainer.style.width = `${cellSize * size}px`;
+            gridContainer.style.height = `${cellSize * size}px`;
+
+            for (let i = 0; i < size * size; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('grid-cell');
+                cell.style.width = `${cellSize}px`;
+                cell.style.height = `${cellSize}px`;
+                cell.dataset.index = i; 
+
+                cell.addEventListener('mousedown', (e) => {
+                    isDrawing = true;
+                    if (e.button === 0) { 
+                        cell.style.backgroundColor = selectedColor;
+                    } else if (e.button === 2) { 
+                        cell.style.backgroundColor = '#FFFFFF';
+                    }
+                });
+                cell.addEventListener('mouseover', (e) => {
+                    if (isDrawing) {
+                        if (e.buttons === 1) { 
+                            cell.style.backgroundColor = selectedColor;
+                        } else if (e.buttons === 2) { 
+                            cell.style.backgroundColor = '#FFFFFF';
+                        }
+                    }
+                });
+                cell.addEventListener('contextmenu', (e) => e.preventDefault());
+
+                gridContainer.appendChild(cell);
+            }
+        }
+
+        document.addEventListener('mouseup', () => {
+            isDrawing = false;
+        });
+
+        gridContainer.addEventListener('touchstart', (e) => {
+            isDrawing = true;
+            const touch = e.touches[0];
+            const targetCell = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (targetCell && targetCell.classList.contains('grid-cell')) {
+                targetCell.style.backgroundColor = selectedColor;
+            }
+            e.preventDefault(); 
+        }, { passive: false });
+
+        gridContainer.addEventListener('touchmove', (e) => {
+            if (isDrawing) {
+                const touch = e.touches[0];
+                const targetCell = document.elementFromPoint(touch.clientX, touch.clientY);
+                if (targetCell && targetCell.classList.contains('grid-cell')) {
+                    targetCell.style.backgroundColor = selectedColor;
+                }
+            }
+            e.preventDefault(); 
+        }, { passive: false });
+
+        gridContainer.addEventListener('touchend', () => {
+            isDrawing = false;
+        });
+
+
+        createGridBtn.addEventListener('click', () => {
+            const newSize = parseInt(gridSizeInput.value);
+            if (newSize >= 8 && newSize <= 64) {
+                currentGridSize = newSize;
+                createGrid(currentGridSize);
+            } else {
+                alert('グリッドサイズは8から64の間で指定してください。');
+            }
+        });
+
+        clearGridBtn.addEventListener('click', () => {
+            const cells = document.querySelectorAll('.grid-cell');
+            cells.forEach(cell => {
+                cell.style.backgroundColor = '#FFFFFF'; 
+            });
+        });
+
+        colorPalette.addEventListener('click', (e) => {
+            const target = e.target;
+            if (target.classList.contains('color-box')) {
+                selectedColor = target.dataset.color;
+                updateSelectedColorUI();
+            }
+        });
+
+        customColorPicker.addEventListener('input', (e) => {
+            selectedColor = e.target.value;
+            updateSelectedColorUI();
+        });
+
+        function updateSelectedColorUI() {
+            document.querySelectorAll('.color-box').forEach(box => {
+                box.classList.remove('selected');
+            });
+            const selectedBox = document.querySelector(`.color-box[data-color="${selectedColor}"]`);
+            if (selectedBox) {
+                selectedBox.classList.add('selected');
+            } else {
+            }
+        }
+
+        downloadBtn.addEventListener('click', () => {
+            const canvas = document.createElement('canvas');
+            const cells = document.querySelectorAll('.grid-cell');
+            const cellSize = cells[0].offsetWidth; 
+
+            canvas.width = currentGridSize * cellSize;
+            canvas.height = currentGridSize * cellSize;
+            const ctx = canvas.getContext('2d');
+
+            cells.forEach(cell => {
+                const index = parseInt(cell.dataset.index);
+                const row = Math.floor(index / currentGridSize);
+                const col = index % currentGridSize;
+                const color = cell.style.backgroundColor || '#FFFFFF'; 
+
+                ctx.fillStyle = color;
+                ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+            });
+
+            const link = document.createElement('a');
+            link.download = 'pixel_art.png';
+            link.href = canvas.toDataURL('image/png');
+            link.click();
+        });
+
+        window.addEventListener('resize', () => {
+            createGrid(currentGridSize); 
+        });
+
+    </script>
+</body>
+</html>
